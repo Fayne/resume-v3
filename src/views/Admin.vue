@@ -165,10 +165,12 @@ function logout() { clearConfig(); config.token = ''; config.repo = ''; content.
       <label>Repository<input v-model="config.repo" placeholder="owner/repo" /></label>
       <label>Branch<input v-model="config.branch" /></label>
       <button :disabled="busy || !canUse" @click="load">{{ busy ? '处理中…' : '加载' }}</button>
+      <button class="ghost" type="button" v-show="!!content" :disabled="busy || !content" @click="scanImageFields">扫描图片字段</button>
       <button class="secondary" @click="logout">清除会话</button>
     </section>
     <section v-else class="local-actions">
       <button :disabled="busy" @click="load">{{ busy ? '处理中…' : '加载本地文件' }}</button>
+      <button class="ghost" type="button" v-show="!!content" :disabled="busy || !content" @click="scanImageFields">扫描图片字段</button>
     </section>
 
     <p v-if="status" class="status">{{ status }}</p>
@@ -178,7 +180,6 @@ function logout() { clearConfig(); config.token = ''; config.repo = ''; content.
         <select v-model="path" @change="load">
           <option v-for="file in CONTENT_FILES" :key="file">{{ file }}</option>
         </select>
-        <button class="ghost" type="button" :disabled="busy || !content" @click="scanImageFields">重新扫描图片字段</button>
       </div>
 
       <div v-if="imageFields.length" class="image-fields">
@@ -194,9 +195,10 @@ function logout() { clearConfig(); config.token = ''; config.repo = ''; content.
 
       <details class="advanced">
         <summary>高级：在新的字段路径插入图片</summary>
+        <p class="advanced-hint">仅用于当前字段还不存在的情况，比如刚新增了一个项目、但还没有 image 字段。日常更换图片请用上面扫描出来的列表。</p>
         <div class="advanced-row">
           <input v-model="newImagePath" placeholder="例如 projects.2.image（还不存在的字段）" />
-          <button type="button" :disabled="busy" @click="addImageAt">打开媒体库并插入</button>
+          <button type="button" :disabled="busy || !newImagePath.trim()" @click="addImageAt">打开媒体库并插入</button>
         </div>
       </details>
 
@@ -211,12 +213,13 @@ function logout() { clearConfig(); config.token = ''; config.repo = ''; content.
 .admin-page h1{font-size:38px;letter-spacing:-.06em;margin:0}
 .admin-page aside{margin:22px 0;background:#fff1dc;padding:16px 18px;font-size:13px;line-height:1.6}
 .mode-switch{font-size:13px;margin:12px 0}
-.config{display:grid;grid-template-columns:2fr 1fr 100px auto auto;gap:12px;align-items:end}
+.config{display:grid;grid-template-columns:2fr 1fr 100px auto auto auto;gap:12px;align-items:end}
 .config label{font-size:11px;font-weight:700;text-transform:uppercase;color:#727272}
 .config input,.editor select{display:block;width:100%;margin-top:6px;background:#fff;border:1px solid #d7d5cf;padding:11px;font:13px "DM Mono",monospace}
 .config button,.commit,.local-actions button{border:0;background:#1f2328;color:#fff;padding:12px 16px;font-weight:700;cursor:pointer}
 .config .secondary{background:#777}
-.local-actions{margin-bottom:12px}
+.config .ghost,.local-actions .ghost{background:#fff;color:#1f2328;border:1px solid #d7d5cf}
+.local-actions{margin-bottom:12px;display:flex;gap:10px}
 .status{font-size:13px}
 .editor{border:1px solid #d7d5cf;background:#fff}
 .editor-bar{display:flex;justify-content:space-between;gap:12px;padding:12px;border-bottom:1px solid #d7d5cf;flex-wrap:wrap}
@@ -231,6 +234,7 @@ function logout() { clearConfig(); config.token = ''; config.repo = ''; content.
 .editor textarea{width:100%;height:480px;border:0;resize:vertical;padding:20px;font:13px/1.6 "DM Mono",monospace;outline:0}
 .advanced{border-top:1px solid #d7d5cf;padding:12px 16px;font-size:13px}
 .advanced summary{cursor:pointer;color:#727272;font-weight:700}
+.advanced-hint{font-size:12px;color:#8a8a8a;margin:8px 0 0}
 .advanced-row{display:flex;gap:10px;margin-top:10px}
 .advanced-row input{flex:1;border:1px solid #d7d5cf;padding:9px;font:13px "DM Mono",monospace}
 .advanced-row button{border:0;background:#1f2328;color:#fff;padding:9px 14px;font-weight:700;cursor:pointer;white-space:nowrap}
