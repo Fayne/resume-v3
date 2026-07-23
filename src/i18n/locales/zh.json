@@ -1,0 +1,39 @@
+{
+  "nav": {
+    "home": "简历",
+    "admin": "后台管理"
+  },
+  "section": {
+    "summary": "个人简介",
+    "experience": "工作经历",
+    "education": "教育背景",
+    "skills": "技能",
+    "projects": "项目经历"
+  },
+  "admin": {
+    "title": "简历内容管理",
+    "tokenLabel": "GitHub Token",
+    "tokenPlaceholder": "粘贴具有该仓库写权限的 Fine-grained Token",
+    "tokenHint": "Token 仅保存在本地浏览器 localStorage，不会上传到任何第三方服务器。",
+    "repoLabel": "仓库 (owner/repo)",
+    "branchLabel": "分支",
+    "load": "加载简历数据",
+    "loading": "加载中...",
+    "save": "提交修改",
+    "saving": "提交中...",
+    "saveSuccess": "已提交，Cloudflare Pages 正在自动重新构建，约 1 分钟后生效。",
+    "saveFail": "提交失败，请检查 Token 权限或网络。",
+    "addItem": "新增一项",
+    "delete": "删除",
+    "moveUp": "上移",
+    "moveDown": "下移",
+    "zhLabel": "中文",
+    "enLabel": "English",
+    "uploadImage": "上传图片到 Cloudinary",
+    "uploading": "上传中...",
+    "logout": "清除本地 Token"
+  },
+  "common": {
+    "loading": "加载中..."
+  }
+}

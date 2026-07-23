@@ -1,0 +1,39 @@
+{
+  "nav": {
+    "home": "Resume",
+    "admin": "Admin"
+  },
+  "section": {
+    "summary": "Summary",
+    "experience": "Experience",
+    "education": "Education",
+    "skills": "Skills",
+    "projects": "Projects"
+  },
+  "admin": {
+    "title": "Resume Content Manager",
+    "tokenLabel": "GitHub Token",
+    "tokenPlaceholder": "Paste a fine-grained token with write access to this repo",
+    "tokenHint": "The token is stored only in your browser's localStorage, never sent to any third-party server.",
+    "repoLabel": "Repo (owner/repo)",
+    "branchLabel": "Branch",
+    "load": "Load resume data",
+    "loading": "Loading...",
+    "save": "Commit changes",
+    "saving": "Committing...",
+    "saveSuccess": "Committed. Cloudflare Pages is rebuilding automatically, live in about 1 minute.",
+    "saveFail": "Commit failed. Check your token permissions or network.",
+    "addItem": "Add item",
+    "delete": "Delete",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "zhLabel": "中文",
+    "enLabel": "English",
+    "uploadImage": "Upload image to Cloudinary",
+    "uploading": "Uploading...",
+    "logout": "Clear local token"
+  },
+  "common": {
+    "loading": "Loading..."
+  }
+}

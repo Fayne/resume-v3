@@ -1,0 +1,51 @@
+{
+  "profile": {
+    "name": { "zh": "郭仁君", "en": "Fayne Guo" },
+    "title": { "zh": "软件开发", "en": "Software engineer" },
+    "location": { "zh": "中国上海", "en": "Shanghai China" },
+    "email": "fayne.guo@gmail.com",
+    "phone": "13917862002",
+    "avatar": "https://res.cloudinary.com/fayne/image/upload/v1696757314/photos/profile.webp",
+    "summary": {
+      "zh": "我拥有超过15年的软件开发经验，在众多大型项目的规划与实施过程中发挥了关键作用。加入MobileNow后，我始终致力于确保项目在质量、易用性、可维护性以及团队协作效率等方面达到最高标准。\n\n作为技术负责人，我坚信，技术领导力不仅体现在编程能力或系统架构设计上，更在于培养和激励团队，共同实现目标。我十分重视营造开放协作的工作环境，让团队成员能够不断成长、勇于创新，并持续提升自身的专业技能。\n\n在我的带领下，团队成功交付了多个高性能项目，能够稳定支撑网站及微信小程序每秒超过 3,000 次的并发请求。同时，团队在电子商务系统开发领域积累了丰富经验，能够满足市场对于高性能、高可靠性电商平台的严苛要求。\n\n 我始终坚持遵循软件开发最佳实践，将单元测试和 CI/CD作为开发流程中不可或缺的一部分。同样高度重视应用安全，深知其在当今数字化时代的重要性。通过将严格的安全测试融入研发流程，确保团队交付的解决方案不仅具备卓越的性能与稳定性，也拥有可靠的安全保障。",
+      "en": "With over 15 years of experience in software development, Fayne has played a pivotal role in the planning and execution of numerous large-scale projects. After he joined in MobileNow, he is dedicated to ensuring the highest standards of project quality, usability, maintainability, and team efficiency.\n\nAs a technical lead, Fayne believes that leadership in technology is not just about expertise in coding or architecture, but also about mentoring and inspiring a team to achieve collective goals. He places a strong emphasis on fostering a collaborative environment where team members can thrive, innovate, and continuously improve their skills.\n\nFayne’s leadership has been instrumental in delivering high-performance projects capable of handling over 3000 concurrent requests per second for both websites and wechat mini-programs. His team has extensive experience in e-commerce development, showcasing their ability to meet the demanding needs of the market.\n\nA staunch advocate for best practices, Fayne ensures that unit testing and CI/CD processes are integral parts of the development lifecycle. He also prioritizes application security, recognizing its critical importance in today's digital landscape. By integrating rigorous security testing into the workflow, he guarantees that the solutions developed are not only robust and efficient but also secure."
+    }
+  },
+  "experiences": [
+    {
+      "id": "exp-1",
+      "company": { "zh": "上海魔博脑信息科技有限公司", "en": "MobileNow" },
+      "role": { "zh": "技术负责人", "en": "Tech Lead" },
+      "period": "2015.08 - Now",
+      "description": {
+        "zh": "负责xxx产品的前端架构与性能优化。",
+        "en": "Responsible for frontend architecture and performance optimization."
+      }
+    }
+  ],
+  "educations": [
+    {
+      "id": "edu-1",
+      "school": { "zh": "上海大学", "en": "Shanghai University" },
+      "degree": { "zh": "计算机科学 学士", "en": "B.S. in Computer Science" },
+      "period": "2002 - 2006"
+    }
+  ],
+  "skills": [
+    { "id": "sk-1", "name": { "zh": "Vue.js", "en": "Vue.js" } },
+    { "id": "sk-2", "name": { "zh": "TypeScript", "en": "TypeScript" } },
+    { "id": "sk-3", "name": { "zh": "Tailwind CSS", "en": "Tailwind CSS" } }
+  ],
+  "projects": [
+    {
+      "id": "proj-1",
+      "name": { "zh": "个人简历网站", "en": "Personal Resume Site" },
+      "description": {
+        "zh": "基于 Vue3 + Tailwind 构建，通过 GitHub API 实现无服务器内容管理。",
+        "en": "Built with Vue3 + Tailwind, serverless content management via GitHub API."
+      },
+      "link": "",
+      "image": ""
+    }
+  ]
+}
