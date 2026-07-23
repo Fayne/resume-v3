@@ -1,6 +1,10 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [vue()],
-})
+  build: {
+    outDir: mode === 'admin' ? 'dist-admin' : 'dist',
+    rollupOptions: { input: mode === 'admin' ? 'admin.html' : 'index.html' },
+  },
+}))
