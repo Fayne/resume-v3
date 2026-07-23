@@ -2,6 +2,7 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import LanguageSwitch from '../components/LanguageSwitch.vue'
+import { cloudinaryUrl } from '../composables/useCloudinary'
 import profile from '../data/profile.json'
 import skills from '../data/skills.json'
 import projects from '../data/projects.json'
@@ -11,7 +12,7 @@ const { locale } = useI18n()
 const selected = ref(null)
 const showBackToTop = ref(false)
 const loc = (value) => value && typeof value === 'object' ? value[locale.value] || value.zh || value.en || '' : value || ''
-const avatar = profile.avatar ? `https://res.cloudinary.com/fayne/image/upload/v${profile.avatar.version}/${profile.avatar.publicId}.${profile.avatar.format}` : ''
+const avatar = cloudinaryUrl(profile.avatar)
 const updateScrollState = () => { showBackToTop.value = window.scrollY > 500 }
 const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' })
 onMounted(() => window.addEventListener('scroll', updateScrollState, { passive: true }))
