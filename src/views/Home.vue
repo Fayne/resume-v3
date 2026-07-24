@@ -1,8 +1,8 @@
 <script setup>
-import {onBeforeUnmount, onMounted, ref, watchEffect} from 'vue'
-import {useI18n} from 'vue-i18n'
+import { nextTick, onBeforeUnmount, onMounted, ref, watchEffect } from 'vue'
+import { useI18n } from 'vue-i18n'
 import LanguageSwitch from '../components/LanguageSwitch.vue'
-import {cloudinaryUrl} from '../composables/useCloudinary'
+import { cloudinaryUrl } from '../composables/useCloudinary'
 import profile from '../data/profile.json'
 import skills from '../data/skills.json'
 import projects from '../data/projects.json'
@@ -11,18 +11,45 @@ import timeline from '../data/timeline.json'
 const { locale, t } = useI18n()
 const selected = ref(null)
 const showBackToTop = ref(false)
+const projectRail = ref(null)
+const canScrollPrev = ref(false)
+const canScrollNext = ref(true)
 const loc = (value) => value && typeof value === 'object' ? value[locale.value] || value.zh || value.en || '' : value || ''
 const avatar = cloudinaryUrl(profile.avatar)
 const updateScrollState = () => { showBackToTop.value = window.scrollY > 500 }
 const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' })
+const hasMetrics = (project) => Array.isArray(project?.metrics) && project.metrics.length > 0
+const hasLessons = (project) => Array.isArray(project?.lessons) && project.lessons.length > 0
+
+function updateProjectRailState() {
+  const rail = projectRail.value
+  if (!rail) return
+  canScrollPrev.value = rail.scrollLeft > 8
+  canScrollNext.value = rail.scrollLeft + rail.clientWidth < rail.scrollWidth - 8
+}
+
+function scrollProjects(direction) {
+  const rail = projectRail.value
+  if (!rail) return
+  rail.scrollBy({ left: direction * rail.clientWidth * 0.78, behavior: 'smooth' })
+}
 
 watchEffect(() => {
   document.title = `${t('common.resume')} | ${loc(profile.name)}`
   document.documentElement.lang = locale.value === 'zh' ? 'zh-CN' : 'en'
 })
 
-onMounted(() => window.addEventListener('scroll', updateScrollState, { passive: true }))
-onBeforeUnmount(() => window.removeEventListener('scroll', updateScrollState))
+onMounted(async () => {
+  window.addEventListener('scroll', updateScrollState, { passive: true })
+  window.addEventListener('resize', updateProjectRailState)
+  await nextTick()
+  updateProjectRailState()
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('scroll', updateScrollState)
+  window.removeEventListener('resize', updateProjectRailState)
+})
 </script>
 
 <template>
@@ -64,14 +91,24 @@ onBeforeUnmount(() => window.removeEventListener('scroll', updateScrollState))
         <p class="eyebrow">01 / {{ locale === 'zh' ? '精选项目' : 'Selected work' }}</p>
         <h2>{{ locale === 'zh' ? '复杂系统，\n为业务所用。' : 'Complex systems,\nmade useful.' }}</h2>
       </div>
-      <div class="project-grid">
-        <article v-for="project in projects" :key="project.id" class="project-card" @click="selected=project">
-          <div class="project-top"><span>{{ loc(project.industry) }}</span><span>{{ project.period }}</span></div>
-          <h3>{{ loc(project.name) }}</h3>
-          <p>{{ loc(project.summary) }}</p>
-          <div class="tags"><span v-for="tech in project.technologies" :key="tech">{{ tech }}</span></div>
-          <button>{{ locale === 'zh' ? '查看案例' : 'View case study' }} <b>↗</b></button>
-        </article>
+      <div class="project-rail-shell">
+        <div class="project-rail-actions">
+          <button class="rail-button" type="button" :disabled="!canScrollPrev" :aria-label="locale === 'zh' ? '查看上一个项目' : 'Show previous project'" @click="scrollProjects(-1)">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7" /></svg>
+          </button>
+          <button class="rail-button" type="button" :disabled="!canScrollNext" :aria-label="locale === 'zh' ? '查看下一个项目' : 'Show next project'" @click="scrollProjects(1)">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg>
+          </button>
+        </div>
+        <div ref="projectRail" class="project-rail" @scroll.passive="updateProjectRailState">
+          <article v-for="project in projects" :key="project.id" class="project-card project-slide" @click="selected=project">
+            <div class="project-top"><span>{{ loc(project.industry) }}</span><span>{{ project.period }}</span></div>
+            <h3>{{ loc(project.name) }}</h3>
+            <p>{{ loc(project.summary) }}</p>
+            <div class="tags"><span v-for="tech in project.technologies" :key="tech">{{ tech }}</span></div>
+            <button>{{ locale === 'zh' ? '查看案例' : 'View case study' }} <b>↗</b></button>
+          </article>
+        </div>
       </div>
     </section>
 
@@ -130,9 +167,11 @@ onBeforeUnmount(() => window.removeEventListener('scroll', updateScrollState))
           <section><h3>{{ locale === 'zh' ? '挑战' : 'Challenge' }}</h3><p>{{ loc(selected.challenge) }}</p></section>
           <section><h3>{{ locale === 'zh' ? '解决方案' : 'Solution' }}</h3><p>{{ loc(selected.solution) }}</p></section>
         </div>
-        <div class="metrics"><div v-for="metric in selected.metrics" :key="metric.value"><b>{{ metric.value }}</b><span>{{ loc(metric.label) }}</span></div></div>
-        <h3>{{ locale === 'zh' ? '经验沉淀' : 'What stayed with me' }}</h3>
-        <ul class="lessons"><li v-for="lesson in selected.lessons" :key="loc(lesson)">{{ loc(lesson) }}</li></ul>
+        <div v-if="hasMetrics(selected)" class="metrics"><div v-for="metric in selected.metrics" :key="metric.value"><b>{{ metric.value }}</b><span>{{ loc(metric.label) }}</span></div></div>
+        <template v-if="hasLessons(selected)">
+          <h3>{{ locale === 'zh' ? '经验沉淀' : 'What stayed with me' }}</h3>
+          <ul class="lessons"><li v-for="lesson in selected.lessons" :key="loc(lesson)">{{ loc(lesson) }}</li></ul>
+        </template>
       </article>
     </div>
   </main>

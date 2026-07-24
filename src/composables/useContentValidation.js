@@ -121,23 +121,27 @@ function validateProjects(content, errors) {
     validateLocalizedText(errors, `${index}.solution`, project.solution)
     validateStringArray(errors, `${index}.technologies`, project.technologies)
 
-    if (!Array.isArray(project.metrics)) {
-      pushError(errors, `${index}.metrics`, '必须是数组。')
-    } else {
-      project.metrics.forEach((metric, metricIndex) => {
-        if (!isObject(metric)) {
-          pushError(errors, `${index}.metrics.${metricIndex}`, '必须是对象。')
-          return
-        }
-        validateLocalizedText(errors, `${index}.metrics.${metricIndex}.label`, metric.label)
-        validateString(errors, `${index}.metrics.${metricIndex}.value`, metric.value)
-      })
+    if (project.metrics != null) {
+      if (!Array.isArray(project.metrics)) {
+        pushError(errors, `${index}.metrics`, '必须是数组。')
+      } else {
+        project.metrics.forEach((metric, metricIndex) => {
+          if (!isObject(metric)) {
+            pushError(errors, `${index}.metrics.${metricIndex}`, '必须是对象。')
+            return
+          }
+          validateLocalizedText(errors, `${index}.metrics.${metricIndex}.label`, metric.label)
+          validateString(errors, `${index}.metrics.${metricIndex}.value`, metric.value)
+        })
+      }
     }
 
-    if (!Array.isArray(project.lessons)) {
-      pushError(errors, `${index}.lessons`, '必须是数组。')
-    } else {
-      project.lessons.forEach((lesson, lessonIndex) => validateLocalizedText(errors, `${index}.lessons.${lessonIndex}`, lesson))
+    if (project.lessons != null) {
+      if (!Array.isArray(project.lessons)) {
+        pushError(errors, `${index}.lessons`, '必须是数组。')
+      } else {
+        project.lessons.forEach((lesson, lessonIndex) => validateLocalizedText(errors, `${index}.lessons.${lessonIndex}`, lesson))
+      }
     }
 
     if (project.image != null) validateAsset(errors, `${index}.image`, project.image)

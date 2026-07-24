@@ -261,10 +261,8 @@ function emptyProject() {
     team: localizedText(),
     summary: localizedText(),
     technologies: [''],
-    metrics: [emptyMetric()],
     challenge: localizedText(),
     solution: localizedText(),
-    lessons: [localizedText()],
   }
 }
 
@@ -368,6 +366,11 @@ function logout() {
 
 function addItem(list, item) {
   list.push(item)
+}
+
+function ensureArrayField(target, key) {
+  if (!Array.isArray(target[key])) target[key] = []
+  return target[key]
 }
 
 async function addItemAndFocus(list, item, { event, scopeSelector, itemSelector, openMap, openIndex } = {}) {
@@ -814,10 +817,16 @@ async function pickAsset(assign) {
                     <div class="card-header">
                       <div>
                         <h3>Metrics</h3>
-                        <p>案例中的关键结果数据。</p>
+                        <p>可选字段。适合放关键结果、性能数字或业务指标。</p>
                       </div>
-                      <button class="ghost" type="button" @click="addItemAndFocus(project.metrics, emptyMetric(), { event: $event, itemSelector: `[data-focus-item='metric']` })">新增指标</button>
+                      <div class="button-row">
+                        <button class="ghost" type="button" @click="addItemAndFocus(ensureArrayField(project, 'metrics'), emptyMetric(), { event: $event, itemSelector: `[data-focus-item='metric']` })">
+                          {{ Array.isArray(project.metrics) && project.metrics.length ? '新增指标' : '添加指标' }}
+                        </button>
+                        <button v-if="Array.isArray(project.metrics) && project.metrics.length" class="ghost small" type="button" @click="delete project.metrics">移除区块</button>
+                      </div>
                     </div>
+                    <p v-if="!Array.isArray(project.metrics) || !project.metrics.length" class="card-hint">这个项目当前没有 Metrics，前台案例弹层会自动隐藏这块。</p>
                     <div v-for="(metric, metricIndex) in project.metrics" :key="metricIndex" class="array-card" data-focus-item="metric">
                       <div class="array-toolbar">
                         <strong>Metric {{ metricIndex + 1 }}</strong>
@@ -839,10 +848,16 @@ async function pickAsset(assign) {
                     <div class="card-header">
                       <div>
                         <h3>Lessons</h3>
-                        <p>案例最后的经验沉淀。</p>
+                        <p>可选字段。适合放复盘、沉淀或者关键经验。</p>
                       </div>
-                      <button class="ghost" type="button" @click="addItemAndFocus(project.lessons, localizedText(), { event: $event, itemSelector: `[data-focus-item='lesson']` })">新增经验</button>
+                      <div class="button-row">
+                        <button class="ghost" type="button" @click="addItemAndFocus(ensureArrayField(project, 'lessons'), localizedText(), { event: $event, itemSelector: `[data-focus-item='lesson']` })">
+                          {{ Array.isArray(project.lessons) && project.lessons.length ? '新增经验' : '添加经验' }}
+                        </button>
+                        <button v-if="Array.isArray(project.lessons) && project.lessons.length" class="ghost small" type="button" @click="delete project.lessons">移除区块</button>
+                      </div>
                     </div>
+                    <p v-if="!Array.isArray(project.lessons) || !project.lessons.length" class="card-hint">这个项目当前没有 Lessons，前台案例弹层会自动隐藏这块。</p>
                     <div v-for="(lesson, lessonIndex) in project.lessons" :key="lessonIndex" class="array-card" data-focus-item="lesson">
                       <div class="array-toolbar">
                         <strong>Lesson {{ lessonIndex + 1 }}</strong>
