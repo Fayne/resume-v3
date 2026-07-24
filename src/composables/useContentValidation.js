@@ -1,5 +1,6 @@
 import { CONTENT_FILE_SET } from '../content/contentFiles'
 import { normalizeSkillGroupLevel, SKILL_GROUP_LEVELS } from '../content/skillGroupLevels'
+import { SKILL_LEVEL_VALUES } from '../content/skillLevels'
 
 function pushError(errors, path, message) {
   errors.push({ path, message })
@@ -15,6 +16,10 @@ function isNonEmptyString(value) {
 
 function isLocalizedText(value) {
   return isObject(value) && isNonEmptyString(value.zh) && isNonEmptyString(value.en)
+}
+
+function hasAnyLocalizedText(value) {
+  return isObject(value) && (isNonEmptyString(value.zh) || isNonEmptyString(value.en))
 }
 
 function validateLocalizedText(errors, path, value) {
@@ -101,7 +106,8 @@ function validateSkills(content, errors) {
       }
       validateString(errors, `${index}.skills.${skillIndex}.name`, skill.name)
       validateNumber(errors, `${index}.skills.${skillIndex}.years`, skill.years, { min: 0, max: 50 })
-      validateString(errors, `${index}.skills.${skillIndex}.level`, skill.level)
+      validateEnum(errors, `${index}.skills.${skillIndex}.level`, skill.level, SKILL_LEVEL_VALUES)
+      if (hasAnyLocalizedText(skill.description)) validateLocalizedText(errors, `${index}.skills.${skillIndex}.description`, skill.description)
     })
   })
 }

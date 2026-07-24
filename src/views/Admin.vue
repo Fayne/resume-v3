@@ -3,6 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } 
 import LocalizedField from '../components/admin/LocalizedField.vue'
 import { CONTENT_FILES, getContentFileLabel } from '../content/contentFiles'
 import { getSkillGroupLevelMeta, normalizeSkillGroupLevel, SKILL_GROUP_LEVELS } from '../content/skillGroupLevels'
+import { SKILL_LEVEL_OPTIONS } from '../content/skillLevels'
 import { cloudinaryUrl, openMediaLibrary } from '../composables/useCloudinary'
 import { loadContent, saveContent } from '../composables/useContentStore'
 import { validateContentFile } from '../composables/useContentValidation'
@@ -54,6 +55,7 @@ const showFloatingSave = computed(() => {
 })
 
 const skillGroupLevelOptions = SKILL_GROUP_LEVELS
+const skillLevelOptions = SKILL_LEVEL_OPTIONS
 
 function displayText(value) {
   if (value && typeof value === 'object') return value.zh || value.en || ''
@@ -237,7 +239,7 @@ function emptyLink() {
 }
 
 function emptySkill() {
-  return { name: '', years: 1, level: 'Advanced' }
+  return { name: '', years: 1, level: 'Advanced', description: localizedText() }
 }
 
 function emptySkillGroup() {
@@ -256,6 +258,12 @@ function normalizeSkillGroups(content) {
     const nextGroup = cloneValue(group)
     nextGroup.level = normalizeSkillGroupLevel(nextGroup.level ?? nextGroup.emphasis) || 'core'
     delete nextGroup.emphasis
+    if (Array.isArray(nextGroup.skills)) {
+      nextGroup.skills = nextGroup.skills.map((skill) => ({
+        ...skill,
+        description: skill.description ?? localizedText(),
+      }))
+    }
     return nextGroup
   })
 }
@@ -726,9 +734,14 @@ async function pickAsset(assign) {
                         </label>
                         <label class="field">
                           <span>Level</span>
-                          <input v-model="skill.level" type="text" />
+                          <select v-model="skill.level">
+                            <option v-for="option in skillLevelOptions" :key="option.value" :value="option.value">
+                              {{ option.zh }} / {{ option.en }}
+                            </option>
+                          </select>
                         </label>
                       </div>
+                      <LocalizedField v-model="skill.description" label="Description" textarea :rows="2" />
                     </div>
                   </div>
                 </div>

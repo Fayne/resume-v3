@@ -266,6 +266,7 @@ onBeforeUnmount(() => {
             <article v-for="skill in activeSkillGroup.skills" :key="skill.name" class="capability-card">
               <strong>{{ skill.name }}</strong>
               <span>{{ skill.level }}</span>
+              <p v-if="loc(skill.description)">{{ loc(skill.description) }}</p>
               <small>{{ skill.years }}y</small>
             </article>
           </div>

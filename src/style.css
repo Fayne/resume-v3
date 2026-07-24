@@ -42,6 +42,7 @@ body {
 .capability-card{display:grid;gap:10px;padding:18px;background:#fff;border:1px solid #ddd7ca;min-height:128px}
 .capability-card strong{font-size:16px;line-height:1.35}
 .capability-card span{font-size:12px;color:#4f4d47}
+.capability-card p{margin:0;font-size:13px;line-height:1.6;color:#666}
 .capability-card small{margin-top:auto;font:11px "DM Mono",monospace;color:#727272}
 .case-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:18px}
 .case-access-group{display:flex;gap:10px;align-items:center}
