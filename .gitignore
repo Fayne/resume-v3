@@ -4,3 +4,5 @@ dist-admin
 .DS_Store
 *.local
 .env
+index.html
+admin.html
