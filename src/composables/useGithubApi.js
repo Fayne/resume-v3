@@ -20,7 +20,7 @@ export function getSavedConfig() {
   return {
     token: storage?.getItem(TOKEN_KEY) || '',
     repo: storage?.getItem(REPO_KEY) || '',
-    branch: storage?.getItem(BRANCH_KEY) || 'main',
+    branch: storage?.getItem(BRANCH_KEY) || 'master',
   }
 }
 
@@ -29,7 +29,7 @@ export function saveConfig({ token, repo, branch }) {
   if (!storage) return
   storage.setItem(TOKEN_KEY, token)
   storage.setItem(REPO_KEY, repo)
-  storage.setItem(BRANCH_KEY, branch || 'main')
+  storage.setItem(BRANCH_KEY, branch || 'master')
 }
 
 export function clearConfig() {
@@ -59,7 +59,7 @@ function encode(str) { return btoa(unescape(encodeURIComponent(str))) }
 export async function fetchContentFile({ token, repo, branch, path }) {
   try {
     const { owner, name } = parseRepo(repo)
-    const { data } = await new Octokit({ auth: token }).repos.getContent({ owner, repo: name, path, ref: branch || 'main' })
+    const { data } = await new Octokit({ auth: token }).repos.getContent({ owner, repo: name, path, ref: branch || 'master' })
     return { content: JSON.parse(decode(data.content)), sha: data.sha }
   } catch (error) {
     throw buildGithubError(error, '无法读取 GitHub 内容。')
@@ -76,7 +76,7 @@ export async function commitContentFile({ token, repo, branch, path, content, sh
       message: `content: update ${path}`,
       content: encode(JSON.stringify(content, null, 2)),
       sha,
-      branch: branch || 'main',
+      branch: branch || 'master',
     })
   } catch (error) {
     throw buildGithubError(error, '无法提交 GitHub 内容。')
