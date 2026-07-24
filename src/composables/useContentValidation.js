@@ -1,4 +1,5 @@
 import { CONTENT_FILE_SET } from '../content/contentFiles'
+import { normalizeSkillGroupLevel, SKILL_GROUP_LEVELS } from '../content/skillGroupLevels'
 
 function pushError(errors, path, message) {
   errors.push({ path, message })
@@ -28,6 +29,10 @@ function validateAsset(errors, path, value) {
 
 function validateString(errors, path, value) {
   if (!isNonEmptyString(value)) pushError(errors, path, '必须是非空字符串。')
+}
+
+function validateEnum(errors, path, value, values) {
+  if (!values.includes(value)) pushError(errors, path, `必须是以下值之一：${values.join(' / ')}。`)
 }
 
 function validateNumber(errors, path, value, { min = Number.NEGATIVE_INFINITY, max = Number.POSITIVE_INFINITY } = {}) {
@@ -83,7 +88,8 @@ function validateSkills(content, errors) {
     validateString(errors, `${index}.id`, group.id)
     validateLocalizedText(errors, `${index}.name`, group.name)
     validateLocalizedText(errors, `${index}.description`, group.description)
-    validateNumber(errors, `${index}.emphasis`, group.emphasis, { min: 0, max: 100 })
+    const normalizedLevel = normalizeSkillGroupLevel(group.level ?? group.emphasis)
+    if (!normalizedLevel) pushError(errors, `${index}.level`, `必须是以下值之一：${SKILL_GROUP_LEVELS.map((item) => item.value).join(' / ')}。`)
     if (!Array.isArray(group.skills)) {
       pushError(errors, `${index}.skills`, '必须是技能数组。')
       return
@@ -120,6 +126,16 @@ function validateProjects(content, errors) {
     validateLocalizedText(errors, `${index}.challenge`, project.challenge)
     validateLocalizedText(errors, `${index}.solution`, project.solution)
     validateStringArray(errors, `${index}.technologies`, project.technologies)
+    if (project.access != null) {
+      if (!isObject(project.access)) {
+        pushError(errors, `${index}.access`, '必须是对象。')
+      } else {
+        validateEnum(errors, `${index}.access.type`, project.access.type, ['url', 'qr'])
+        validateLocalizedText(errors, `${index}.access.label`, project.access.label)
+        if (project.access.type === 'url') validateString(errors, `${index}.access.href`, project.access.href)
+        if (project.access.type === 'qr') validateAsset(errors, `${index}.access.image`, project.access.image)
+      }
+    }
 
     if (project.metrics != null) {
       if (!Array.isArray(project.metrics)) {

@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import LocalizedField from '../components/admin/LocalizedField.vue'
 import { CONTENT_FILES, getContentFileLabel } from '../content/contentFiles'
+import { getSkillGroupLevelMeta, normalizeSkillGroupLevel, SKILL_GROUP_LEVELS } from '../content/skillGroupLevels'
 import { cloudinaryUrl, openMediaLibrary } from '../composables/useCloudinary'
 import { loadContent, saveContent } from '../composables/useContentStore'
 import { validateContentFile } from '../composables/useContentValidation'
@@ -52,6 +53,8 @@ const showFloatingSave = computed(() => {
   return hasUnsavedChanges.value && !isNearBottom.value
 })
 
+const skillGroupLevelOptions = SKILL_GROUP_LEVELS
+
 function displayText(value) {
   if (value && typeof value === 'object') return value.zh || value.en || ''
   return value || ''
@@ -81,7 +84,7 @@ const outlineItems = computed(() => {
       .map((group, index) => ({
         index,
         title: displayText(group.name) || `Group ${index + 1}`,
-        meta: typeof group.emphasis === 'number' ? `${group.emphasis}%` : '',
+        meta: getSkillGroupLevelMeta(group.level)?.zh || '',
       }))
       .filter((item) => !query || `${item.title} ${item.meta}`.toLowerCase().includes(query))
   }
@@ -242,13 +245,29 @@ function emptySkillGroup() {
     id: '',
     name: localizedText(),
     description: localizedText(),
-    emphasis: 80,
+    level: 'core',
     skills: [emptySkill()],
   }
 }
 
+function normalizeSkillGroups(content) {
+  if (!Array.isArray(content)) return content
+  return content.map((group) => {
+    const nextGroup = cloneValue(group)
+    nextGroup.level = normalizeSkillGroupLevel(nextGroup.level ?? nextGroup.emphasis) || 'core'
+    delete nextGroup.emphasis
+    return nextGroup
+  })
+}
+
 function emptyMetric() {
   return { label: localizedText(), value: '' }
+}
+
+function emptyProjectAccess(type = 'url') {
+  return type === 'qr'
+    ? { type: 'qr', label: localizedText(), image: null }
+    : { type: 'url', label: localizedText(), href: '' }
 }
 
 function emptyProject() {
@@ -301,7 +320,11 @@ async function load() {
       delete nextDraft.availability
       if (!Array.isArray(nextDraft.workModes)) nextDraft.workModes = []
     }
-    draft.value = nextDraft
+    if (path.value === SKILLS_PATH) {
+      draft.value = normalizeSkillGroups(nextDraft)
+    } else {
+      draft.value = nextDraft
+    }
     sha.value = file.sha || ''
     markCurrentAsSaved()
     runValidation()
@@ -371,6 +394,14 @@ function addItem(list, item) {
 function ensureArrayField(target, key) {
   if (!Array.isArray(target[key])) target[key] = []
   return target[key]
+}
+
+function updateProjectAccessType(project, type) {
+  if (type === 'none') {
+    delete project.access
+    return
+  }
+  project.access = emptyProjectAccess(type)
 }
 
 async function addItemAndFocus(list, item, { event, scopeSelector, itemSelector, openMap, openIndex } = {}) {
@@ -638,7 +669,7 @@ async function pickAsset(assign) {
                 <summary class="collapsible-summary">
                   <div class="collapsible-title">
                     <strong>{{ displayText(group.name) || `Group ${groupIndex + 1}` }}</strong>
-                    <span>{{ typeof group.emphasis === 'number' ? `${group.emphasis}%` : '' }}</span>
+                    <span>{{ getSkillGroupLevelMeta(group.level)?.zh || '' }}</span>
                   </div>
                   <div class="collapsible-actions">
                     <button class="ghost small" type="button" @click.stop="moveItem(draft, groupIndex, -1)">上移</button>
@@ -654,8 +685,12 @@ async function pickAsset(assign) {
                       <input v-model="group.id" type="text" />
                     </label>
                     <label class="field">
-                      <span>Emphasis</span>
-                      <input v-model.number="group.emphasis" type="number" min="0" max="100" />
+                      <span>Level</span>
+                      <select v-model="group.level">
+                        <option v-for="option in skillGroupLevelOptions" :key="option.value" :value="option.value">
+                          {{ option.zh }} / {{ option.en }}
+                        </option>
+                      </select>
                     </label>
                   </div>
 
@@ -788,6 +823,55 @@ async function pickAsset(assign) {
                   <LocalizedField v-model="project.summary" label="项目摘要" textarea :rows="3" />
                   <LocalizedField v-model="project.challenge" label="Challenge" textarea :rows="4" />
                   <LocalizedField v-model="project.solution" label="Solution" textarea :rows="4" />
+
+                  <div class="nested-block">
+                    <div class="card-header">
+                      <div>
+                        <h3>Project Access</h3>
+                        <p>给用户一个直接查看项目的入口。网站 / App 用 URL，小程序用二维码。</p>
+                      </div>
+                    </div>
+                    <label class="field">
+                      <span>Type</span>
+                      <select :value="project.access?.type || 'none'" @change="updateProjectAccessType(project, $event.target.value)">
+                        <option value="none">不展示入口</option>
+                        <option value="url">外部链接</option>
+                        <option value="qr">二维码</option>
+                      </select>
+                    </label>
+
+                    <template v-if="project.access?.type === 'url'">
+                      <LocalizedField v-model="project.access.label" label="入口文案" />
+                      <label class="field">
+                        <span>URL</span>
+                        <input v-model="project.access.href" type="url" placeholder="https://example.com" />
+                      </label>
+                    </template>
+
+                    <template v-else-if="project.access?.type === 'qr'">
+                      <LocalizedField v-model="project.access.label" label="二维码说明" />
+                      <div class="card-header">
+                        <div>
+                          <h3>QR Image</h3>
+                          <p>鼠标悬浮在前台图标上时，会展示这张二维码。</p>
+                        </div>
+                        <div class="button-row">
+                          <button class="ghost" type="button" :disabled="busy || mediaLoading" @click="pickAsset((asset) => { project.access.image = asset })">
+                            {{ mediaLoading ? '加载媒体库中...' : (project.access.image ? '更换二维码' : '选择二维码') }}
+                          </button>
+                          <button v-if="project.access.image" class="danger" type="button" @click="project.access.image = null">移除图片</button>
+                        </div>
+                      </div>
+                      <div v-if="project.access.image" class="asset-preview compact">
+                        <img :src="cloudinaryUrl(project.access.image, { transformation: 'w_160,h_160,c_fit' })" alt="" />
+                        <div class="asset-meta">
+                          <code>{{ project.access.image.publicId }}</code>
+                          <span>v{{ project.access.image.version }} · {{ project.access.image.format }}</span>
+                        </div>
+                      </div>
+                      <p v-else class="card-hint">还没有上传二维码图片。</p>
+                    </template>
+                  </div>
 
                   <div class="nested-block" data-focus-scope>
                     <div class="card-header">
@@ -1035,7 +1119,7 @@ async function pickAsset(assign) {
 .mode-switch{font-size:13px;margin:12px 0}
 .config{display:grid;grid-template-columns:2fr 1.2fr 180px 110px 120px;gap:12px;align-items:end}
 .config label,.path-picker,.field{display:grid;gap:6px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#666}
-.config input,.path-picker select,.field input,.field textarea{width:100%;border:1px solid #d7d5cf;background:#fff;padding:11px 12px;font:14px/1.5 Manrope,"Noto Sans SC",sans-serif;outline:0}
+.config input,.path-picker select,.field input,.field textarea,.field select{width:100%;border:1px solid #d7d5cf;background:#fff;padding:11px 12px;font:14px/1.5 Manrope,"Noto Sans SC",sans-serif;outline:0}
 .field textarea{resize:vertical;min-height:120px}
 .config button,.local-actions button,.commit,.ghost,.danger{border:0;padding:12px 16px;font-weight:800;cursor:pointer}
 .config button,.local-actions button,.commit{background:#1f2328;color:#fff}
