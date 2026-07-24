@@ -4,7 +4,13 @@
   "location": { "zh": "中国上海 · 可远程协作", "en": "Shanghai, China · Available remotely" },
   "email": "fayne.guo@gmail.com",
   "avatar": { "publicId": "photos/profile", "version": "1696757314", "format": "webp" },
-  "availability": { "zh": "接受精选的架构与产品合作", "en": "Open to selected architecture and product engagements" },
+  "availabilityStatus": { "zh": "接受精选的架构与产品合作", "en": "Open to selected architecture and product engagements" },
+  "workModes": [
+    { "zh": "全职", "en": "Full-time" },
+    { "zh": "兼职", "en": "Part-time" },
+    { "zh": "技术指导", "en": "Technical advisory" },
+    { "zh": "架构咨询", "en": "Architecture consulting" }
+  ],
   "summary": {
     "zh": "拥有超过 15 年的软件开发经验，专注于把复杂业务需求转化为可靠、可演进的软件系统。作为技术负责人，我同时关注架构质量、交付节奏与团队成长。\n\n我带领团队交付的网站和微信小程序可稳定支撑每秒超过 3,000 次并发请求；在电商、内容平台与企业系统领域，持续以测试、CI/CD 和安全实践保证产品长期可维护。",
     "en": "With over 15 years in software development, I turn complex business requirements into reliable, evolvable systems. As a technical lead, I balance architecture quality, delivery momentum, and team growth.\n\nMy teams have delivered web and WeChat products that reliably handle more than 3,000 concurrent requests per second, with testing, CI/CD, and security practices built into the delivery process." },

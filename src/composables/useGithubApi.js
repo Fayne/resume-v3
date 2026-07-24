@@ -74,7 +74,7 @@ export async function commitContentFile({ token, repo, branch, path, content, sh
       repo: name,
       path,
       message: `content: update ${path}`,
-      content: encode(JSON.stringify(content, null, 2)),
+      content: encode(JSON.stringify(content)),
       sha,
       branch: branch || 'master',
     })

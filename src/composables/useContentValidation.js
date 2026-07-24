@@ -46,7 +46,12 @@ function validateProfile(content, errors) {
   validateLocalizedText(errors, 'name', content.name)
   validateLocalizedText(errors, 'title', content.title)
   validateLocalizedText(errors, 'location', content.location)
-  validateLocalizedText(errors, 'availability', content.availability)
+  validateLocalizedText(errors, 'availabilityStatus', content.availabilityStatus || content.availability)
+  if (!Array.isArray(content.workModes)) {
+    pushError(errors, 'workModes', '必须是数组。')
+  } else {
+    content.workModes.forEach((mode, index) => validateLocalizedText(errors, `workModes.${index}`, mode))
+  }
   validateLocalizedText(errors, 'summary', content.summary)
   validateString(errors, 'email', content.email)
   validateAsset(errors, 'avatar', content.avatar)

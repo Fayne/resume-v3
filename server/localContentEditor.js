@@ -58,7 +58,7 @@ export function localContentEditor() {
             return
           }
 
-          await writeFile(absolutePath, `${JSON.stringify(content, null, 2)}\n`, 'utf8')
+          await writeFile(absolutePath, `${JSON.stringify(content)}\n`, 'utf8')
           sendJson(response, 200, { ok: true })
         } catch (error) {
           sendJson(response, 400, { error: `Invalid content payload: ${error.message}` })

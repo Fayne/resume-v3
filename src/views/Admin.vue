@@ -1,5 +1,5 @@
 <script setup>
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import LocalizedField from '../components/admin/LocalizedField.vue'
 import { CONTENT_FILES, getContentFileLabel } from '../content/contentFiles'
 import { cloudinaryUrl, openMediaLibrary } from '../composables/useCloudinary'
@@ -18,12 +18,31 @@ const draft = ref(null)
 const sha = ref('')
 const status = ref('')
 const busy = ref(false)
+const loading = ref(false)
+const saving = ref(false)
+const mediaLoading = ref(false)
 const validationErrors = ref([])
 const isDevelopment = import.meta.env.DEV
 const useLocal = ref(isDevelopment)
 const canUse = computed(() => config.token && config.repo)
 const currentLabel = computed(() => getContentFileLabel(path.value))
 const jsonPreview = computed(() => draft.value ? JSON.stringify(draft.value, null, 2) : '')
+const toast = reactive({ visible: false, message: '', type: 'success' })
+let toastTimer = null
+
+function showToast(message, type = 'success') {
+  toast.message = message
+  toast.type = type
+  toast.visible = true
+  if (toastTimer) window.clearTimeout(toastTimer)
+  toastTimer = window.setTimeout(() => {
+    toast.visible = false
+  }, 2600)
+}
+
+onBeforeUnmount(() => {
+  if (toastTimer) window.clearTimeout(toastTimer)
+})
 
 function resetRemoteConfig(message = '已清除本地保存的 GitHub 配置。') {
   clearConfig()
@@ -115,10 +134,17 @@ function runValidation() {
 async function load() {
   if (!useLocal.value && !canUse.value) return
   busy.value = true
+  loading.value = true
   status.value = ''
   try {
     const file = await loadContent({ useLocal: useLocal.value, config, path: path.value })
-    draft.value = cloneValue(file.content)
+    const nextDraft = cloneValue(file.content)
+    if (path.value === PROFILE_PATH) {
+      if (nextDraft.availability && !nextDraft.availabilityStatus) nextDraft.availabilityStatus = nextDraft.availability
+      delete nextDraft.availability
+      if (!Array.isArray(nextDraft.workModes)) nextDraft.workModes = []
+    }
+    draft.value = nextDraft
     sha.value = file.sha || ''
     runValidation()
     if (!useLocal.value) saveConfig(config)
@@ -131,6 +157,7 @@ async function load() {
       status.value = `加载失败：${error.message}`
     }
   } finally {
+    loading.value = false
     busy.value = false
   }
 }
@@ -140,16 +167,19 @@ async function save() {
   const isValid = runValidation()
   if (!isValid) {
     status.value = `内容校验未通过，共 ${validationErrors.value.length} 个问题。`
+    showToast('保存前请先修正校验问题。', 'error')
     return
   }
 
   busy.value = true
+  saving.value = true
   try {
     await saveContent({ useLocal: useLocal.value, config, path: path.value, content: draft.value, sha: sha.value })
     if (!useLocal.value) saveConfig(config)
     status.value = useLocal.value
       ? '已写入本地 JSON，前台会跟随 Vite 自动刷新。'
       : '已创建 Git 提交，Cloudflare 将自动重新部署。'
+    showToast(useLocal.value ? '本地 JSON 保存成功。' : 'Git 提交已创建，正在等待部署。')
     if (!useLocal.value) await load()
   } catch (error) {
     if (!useLocal.value && error?.shouldClearConfig) {
@@ -157,7 +187,9 @@ async function save() {
     } else {
       status.value = `保存失败：${error.message}`
     }
+    showToast(`保存失败：${error.message}`, 'error')
   } finally {
+    saving.value = false
     busy.value = false
   }
 }
@@ -189,7 +221,9 @@ function normalizeStringArray(list) {
 }
 
 async function pickAsset(assign) {
+  mediaLoading.value = true
   busy.value = true
+  status.value = '正在加载 Cloudinary Media Library...'
   try {
     const asset = await openMediaLibrary()
     if (!asset) {
@@ -201,7 +235,9 @@ async function pickAsset(assign) {
     status.value = '图片字段已更新，确认无误后点击保存。'
   } catch (error) {
     status.value = `选图失败：${error.message}`
+    showToast(`选图失败：${error.message}`, 'error')
   } finally {
+    mediaLoading.value = false
     busy.value = false
   }
 }
@@ -242,12 +278,12 @@ async function pickAsset(assign) {
         Branch
         <input v-model="config.branch" placeholder="master" />
       </label>
-      <button :disabled="busy || !canUse" @click="load">{{ busy ? '处理中...' : '加载' }}</button>
+      <button :disabled="busy || !canUse" @click="load">{{ loading ? '加载中...' : '加载' }}</button>
       <button class="secondary" :disabled="busy" @click="logout">清除会话</button>
     </section>
 
     <section v-else class="local-actions">
-      <button :disabled="busy" @click="load">{{ busy ? '处理中...' : '加载本地文件' }}</button>
+      <button :disabled="busy" @click="load">{{ loading ? '加载中...' : '加载本地文件' }}</button>
     </section>
 
     <p v-if="status" class="status">{{ status }}</p>
@@ -287,7 +323,7 @@ async function pickAsset(assign) {
             <LocalizedField v-model="draft.name" label="姓名" />
             <LocalizedField v-model="draft.title" label="头衔" />
             <LocalizedField v-model="draft.location" label="所在地" />
-            <LocalizedField v-model="draft.availability" label="合作状态" />
+            <LocalizedField v-model="draft.availabilityStatus" label="合作状态" />
             <LocalizedField v-model="draft.summary" label="个人简介" textarea :rows="5" />
             <label class="field">
               <span>Email</span>
@@ -298,11 +334,35 @@ async function pickAsset(assign) {
           <div class="form-card">
             <div class="card-header">
               <div>
+                <h3>Work Modes</h3>
+                <p>用 tags 展示你接受的合作模式，和项目技术栈一样清晰。</p>
+              </div>
+              <button class="ghost" type="button" @click="addItem(draft.workModes, localizedText())">新增模式</button>
+            </div>
+
+            <p v-if="!draft.workModes.length" class="card-hint">当前还没有合作模式标签。</p>
+
+            <div v-for="(mode, index) in draft.workModes" :key="index" class="array-card compact">
+              <div class="array-toolbar">
+                <strong>Mode {{ index + 1 }}</strong>
+                <div>
+                  <button class="ghost small" type="button" @click="moveItem(draft.workModes, index, -1)">上移</button>
+                  <button class="ghost small" type="button" @click="moveItem(draft.workModes, index, 1)">下移</button>
+                  <button class="danger small" type="button" @click="removeItem(draft.workModes, index)">删除</button>
+                </div>
+              </div>
+              <LocalizedField v-model="draft.workModes[index]" label="合作模式" />
+            </div>
+          </div>
+
+          <div class="form-card">
+            <div class="card-header">
+              <div>
                 <h3>Avatar</h3>
                 <p>继续保存 Cloudinary 资源元数据，不把图片写进仓库。</p>
               </div>
-              <button class="ghost" type="button" :disabled="busy" @click="pickAsset((asset) => { draft.avatar = asset })">
-                选择图片
+              <button class="ghost" type="button" :disabled="busy || mediaLoading" @click="pickAsset((asset) => { draft.avatar = asset })">
+                {{ mediaLoading ? '加载媒体库中...' : '选择图片' }}
               </button>
             </div>
             <div class="asset-preview">
@@ -531,8 +591,8 @@ async function pickAsset(assign) {
                   <p>如果未来项目卡片需要独立封面，可以在这里直接挂 Cloudinary 资源。</p>
                 </div>
                 <div class="button-row">
-                  <button class="ghost" type="button" :disabled="busy" @click="pickAsset((asset) => { project.image = asset })">
-                    {{ project.image ? '更换图片' : '添加图片' }}
+                  <button class="ghost" type="button" :disabled="busy || mediaLoading" @click="pickAsset((asset) => { project.image = asset })">
+                    {{ mediaLoading ? '加载媒体库中...' : (project.image ? '更换图片' : '添加图片') }}
                   </button>
                   <button v-if="project.image" class="danger" type="button" @click="delete project.image">移除图片</button>
                 </div>
@@ -616,9 +676,13 @@ async function pickAsset(assign) {
       </details>
 
       <button class="commit" :disabled="busy || !draft || (!useLocal && !canUse)" @click="save">
-        {{ useLocal ? '保存到本地 JSON' : 'Commit & Deploy' }}
+        {{ saving ? '保存中...' : (useLocal ? '保存到本地 JSON' : 'Commit & Deploy') }}
       </button>
     </section>
+
+    <transition name="toast">
+      <div v-if="toast.visible" class="toast" :class="toast.type">{{ toast.message }}</div>
+    </transition>
   </main>
 </template>
 
@@ -670,10 +734,16 @@ async function pickAsset(assign) {
 .asset-meta{display:grid;gap:6px}
 .asset-meta code{font:12px "DM Mono",monospace;word-break:break-all}
 .asset-meta span{font-size:13px;color:#666}
+.card-hint{margin:0;font-size:13px;line-height:1.6;color:#666}
+.ghost:disabled,.danger:disabled,.commit:disabled,.config button:disabled,.local-actions button:disabled{cursor:not-allowed;opacity:.6}
 .json-preview{border-top:1px solid #d7d5cf;padding:12px 16px}
 .json-preview summary{cursor:pointer;font-weight:800;color:#666}
 .json-preview textarea{width:100%;height:280px;border:1px solid #d7d5cf;background:#fff;margin-top:12px;padding:16px;font:13px/1.6 "DM Mono",monospace;resize:vertical}
 .commit{margin:0 16px 16px;background:#ff5a36}
+.toast{position:fixed;right:24px;bottom:24px;z-index:20;max-width:min(420px,calc(100% - 32px));padding:14px 16px;border-radius:12px;background:#1f2328;color:#fff;box-shadow:0 14px 32px #1f232844;font-size:13px;line-height:1.6}
+.toast.error{background:#b42318}
+.toast-enter-active,.toast-leave-active{transition:all .18s ease}
+.toast-enter-from,.toast-leave-to{opacity:0;transform:translateY(8px)}
 @media(max-width:860px){
   .admin-page{width:calc(100% - 32px);padding-top:34px}
   .config{grid-template-columns:1fr}
