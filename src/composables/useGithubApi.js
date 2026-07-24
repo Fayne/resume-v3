@@ -1,13 +1,42 @@
 import { Octokit } from '@octokit/rest'
-import { CONTENT_FILES } from '../content/contentFiles'
 
 const TOKEN_KEY = 'portfolio-gh-token'
 const REPO_KEY = 'portfolio-gh-repo'
 const BRANCH_KEY = 'portfolio-gh-branch'
 
-export function getSavedConfig() { return { token: sessionStorage.getItem(TOKEN_KEY) || '', repo: sessionStorage.getItem(REPO_KEY) || '', branch: sessionStorage.getItem(BRANCH_KEY) || 'main' } }
-export function saveConfig({ token, repo, branch }) { sessionStorage.setItem(TOKEN_KEY, token); sessionStorage.setItem(REPO_KEY, repo); sessionStorage.setItem(BRANCH_KEY, branch || 'main') }
-export function clearConfig() { [TOKEN_KEY, REPO_KEY, BRANCH_KEY].forEach((key) => sessionStorage.removeItem(key)) }
+function getStorage() {
+  return typeof window === 'undefined' ? null : window.localStorage
+}
+
+function buildGithubError(error, fallbackMessage) {
+  const wrapped = new Error(error?.response?.data?.message || error?.message || fallbackMessage)
+  wrapped.status = error?.status
+  wrapped.shouldClearConfig = [401, 403, 404].includes(error?.status)
+  return wrapped
+}
+
+export function getSavedConfig() {
+  const storage = getStorage()
+  return {
+    token: storage?.getItem(TOKEN_KEY) || '',
+    repo: storage?.getItem(REPO_KEY) || '',
+    branch: storage?.getItem(BRANCH_KEY) || 'main',
+  }
+}
+
+export function saveConfig({ token, repo, branch }) {
+  const storage = getStorage()
+  if (!storage) return
+  storage.setItem(TOKEN_KEY, token)
+  storage.setItem(REPO_KEY, repo)
+  storage.setItem(BRANCH_KEY, branch || 'main')
+}
+
+export function clearConfig() {
+  const storage = getStorage()
+  if (!storage) return
+  ;[TOKEN_KEY, REPO_KEY, BRANCH_KEY].forEach((key) => storage.removeItem(key))
+}
 // 兼容几种常见的粘贴格式：owner/repo、SSH 地址、HTTPS 地址（带或不带 .git 后缀）
 function parseRepo(input) {
   const trimmed = (input || '').trim()
@@ -28,11 +57,28 @@ function decode(str) { return decodeURIComponent(escape(atob(str.replace(/\n/g, 
 function encode(str) { return btoa(unescape(encodeURIComponent(str))) }
 
 export async function fetchContentFile({ token, repo, branch, path }) {
-  const { owner, name } = parseRepo(repo)
-  const { data } = await new Octokit({ auth: token }).repos.getContent({ owner, repo: name, path, ref: branch || 'main' })
-  return { content: JSON.parse(decode(data.content)), sha: data.sha }
+  try {
+    const { owner, name } = parseRepo(repo)
+    const { data } = await new Octokit({ auth: token }).repos.getContent({ owner, repo: name, path, ref: branch || 'main' })
+    return { content: JSON.parse(decode(data.content)), sha: data.sha }
+  } catch (error) {
+    throw buildGithubError(error, '无法读取 GitHub 内容。')
+  }
 }
+
 export async function commitContentFile({ token, repo, branch, path, content, sha }) {
-  const { owner, name } = parseRepo(repo)
-  return new Octokit({ auth: token }).repos.createOrUpdateFileContents({ owner, repo: name, path, message: `content: update ${path}`, content: encode(JSON.stringify(content, null, 2)), sha, branch: branch || 'master' })
+  try {
+    const { owner, name } = parseRepo(repo)
+    return await new Octokit({ auth: token }).repos.createOrUpdateFileContents({
+      owner,
+      repo: name,
+      path,
+      message: `content: update ${path}`,
+      content: encode(JSON.stringify(content, null, 2)),
+      sha,
+      branch: branch || 'main',
+    })
+  } catch (error) {
+    throw buildGithubError(error, '无法提交 GitHub 内容。')
+  }
 }

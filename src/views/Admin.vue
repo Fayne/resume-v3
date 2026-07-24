@@ -25,6 +25,14 @@ const canUse = computed(() => config.token && config.repo)
 const currentLabel = computed(() => getContentFileLabel(path.value))
 const jsonPreview = computed(() => draft.value ? JSON.stringify(draft.value, null, 2) : '')
 
+function resetRemoteConfig(message = '已清除本地保存的 GitHub 配置。') {
+  clearConfig()
+  config.token = ''
+  config.repo = ''
+  config.branch = 'main'
+  status.value = message
+}
+
 watch(draft, () => {
   runValidation()
 }, { deep: true })
@@ -109,15 +117,19 @@ async function load() {
   busy.value = true
   status.value = ''
   try {
-    if (!useLocal.value) saveConfig(config)
     const file = await loadContent({ useLocal: useLocal.value, config, path: path.value })
     draft.value = cloneValue(file.content)
     sha.value = file.sha || ''
     runValidation()
+    if (!useLocal.value) saveConfig(config)
     status.value = useLocal.value ? `已加载本地 ${currentLabel.value}。` : `已加载 GitHub 上的 ${currentLabel.value}。`
   } catch (error) {
     draft.value = null
-    status.value = `加载失败：${error.message}`
+    if (!useLocal.value && error?.shouldClearConfig) {
+      resetRemoteConfig(`加载失败：${error.message}。已自动清空本地保存的 GitHub 配置，请重新输入。`)
+    } else {
+      status.value = `加载失败：${error.message}`
+    }
   } finally {
     busy.value = false
   }
@@ -133,28 +145,28 @@ async function save() {
 
   busy.value = true
   try {
-    if (!useLocal.value) saveConfig(config)
     await saveContent({ useLocal: useLocal.value, config, path: path.value, content: draft.value, sha: sha.value })
+    if (!useLocal.value) saveConfig(config)
     status.value = useLocal.value
       ? '已写入本地 JSON，前台会跟随 Vite 自动刷新。'
       : '已创建 Git 提交，Cloudflare 将自动重新部署。'
     if (!useLocal.value) await load()
   } catch (error) {
-    status.value = `保存失败：${error.message}`
+    if (!useLocal.value && error?.shouldClearConfig) {
+      resetRemoteConfig(`保存失败：${error.message}。已自动清空本地保存的 GitHub 配置，请重新输入。`)
+    } else {
+      status.value = `保存失败：${error.message}`
+    }
   } finally {
     busy.value = false
   }
 }
 
 function logout() {
-  clearConfig()
-  config.token = ''
-  config.repo = ''
-  config.branch = 'master'
+  resetRemoteConfig('已清除本地保存的 GitHub 配置。')
   draft.value = null
   sha.value = ''
   validationErrors.value = []
-  status.value = '已清除当前浏览器会话中的 GitHub 配置。'
 }
 
 function addItem(list, item) {
@@ -228,7 +240,7 @@ async function pickAsset(assign) {
       </label>
       <label>
         Branch
-        <input v-model="config.branch" placeholder="master" />
+        <input v-model="config.branch" placeholder="main" />
       </label>
       <button :disabled="busy || !canUse" @click="load">{{ busy ? '处理中...' : '加载' }}</button>
       <button class="secondary" :disabled="busy" @click="logout">清除会话</button>
