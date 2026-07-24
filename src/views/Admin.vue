@@ -150,7 +150,7 @@ function logout() {
   clearConfig()
   config.token = ''
   config.repo = ''
-  config.branch = 'main'
+  config.branch = 'master'
   draft.value = null
   sha.value = ''
   validationErrors.value = []
@@ -228,7 +228,7 @@ async function pickAsset(assign) {
       </label>
       <label>
         Branch
-        <input v-model="config.branch" placeholder="main" />
+        <input v-model="config.branch" placeholder="master" />
       </label>
       <button :disabled="busy || !canUse" @click="load">{{ busy ? '处理中...' : '加载' }}</button>
       <button class="secondary" :disabled="busy" @click="logout">清除会话</button>
