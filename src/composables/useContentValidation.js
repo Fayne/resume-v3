@@ -119,7 +119,6 @@ function validateProjects(content, errors) {
     validateLocalizedText(errors, `${index}.summary`, project.summary)
     validateLocalizedText(errors, `${index}.challenge`, project.challenge)
     validateLocalizedText(errors, `${index}.solution`, project.solution)
-    validateLocalizedText(errors, `${index}.outcome`, project.outcome)
     validateStringArray(errors, `${index}.technologies`, project.technologies)
 
     if (!Array.isArray(project.metrics)) {

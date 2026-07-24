@@ -34,6 +34,7 @@
     "logout": "Clear local token"
   },
   "common": {
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "resume": "Resume"
   }
 }

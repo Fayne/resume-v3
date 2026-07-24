@@ -1,20 +1,26 @@
 <script setup>
-import { onBeforeUnmount, onMounted, ref } from 'vue'
-import { useI18n } from 'vue-i18n'
+import {onBeforeUnmount, onMounted, ref, watchEffect} from 'vue'
+import {useI18n} from 'vue-i18n'
 import LanguageSwitch from '../components/LanguageSwitch.vue'
-import { cloudinaryUrl } from '../composables/useCloudinary'
+import {cloudinaryUrl} from '../composables/useCloudinary'
 import profile from '../data/profile.json'
 import skills from '../data/skills.json'
 import projects from '../data/projects.json'
 import timeline from '../data/timeline.json'
 
-const { locale } = useI18n()
+const { locale, t } = useI18n()
 const selected = ref(null)
 const showBackToTop = ref(false)
 const loc = (value) => value && typeof value === 'object' ? value[locale.value] || value.zh || value.en || '' : value || ''
 const avatar = cloudinaryUrl(profile.avatar)
 const updateScrollState = () => { showBackToTop.value = window.scrollY > 500 }
 const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' })
+
+watchEffect(() => {
+  document.title = `${t('common.resume')} | ${loc(profile.name)}`
+  document.documentElement.lang = locale.value === 'zh' ? 'zh-CN' : 'en'
+})
+
 onMounted(() => window.addEventListener('scroll', updateScrollState, { passive: true }))
 onBeforeUnmount(() => window.removeEventListener('scroll', updateScrollState))
 </script>
@@ -123,7 +129,6 @@ onBeforeUnmount(() => window.removeEventListener('scroll', updateScrollState))
         <div class="case-flow">
           <section><h3>{{ locale === 'zh' ? '挑战' : 'Challenge' }}</h3><p>{{ loc(selected.challenge) }}</p></section>
           <section><h3>{{ locale === 'zh' ? '解决方案' : 'Solution' }}</h3><p>{{ loc(selected.solution) }}</p></section>
-          <section><h3>{{ locale === 'zh' ? '成果' : 'Outcome' }}</h3><p>{{ loc(selected.outcome) }}</p></section>
         </div>
         <div class="metrics"><div v-for="metric in selected.metrics" :key="metric.value"><b>{{ metric.value }}</b><span>{{ loc(metric.label) }}</span></div></div>
         <h3>{{ locale === 'zh' ? '经验沉淀' : 'What stayed with me' }}</h3>

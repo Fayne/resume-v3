@@ -4,3 +4,4 @@ dist-admin
 .DS_Store
 *.local
 .env
+.trae

@@ -34,6 +34,7 @@
     "logout": "清除本地 Token"
   },
   "common": {
-    "loading": "加载中..."
+    "loading": "加载中...",
+    "resume": "个人简历"
   }
 }
