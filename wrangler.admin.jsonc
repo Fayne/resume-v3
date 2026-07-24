@@ -3,6 +3,7 @@
   "name": "resume-v3-admin",
   "compatibility_date": "2026-07-23",
   "main": "./worker/index.js",
+  "keep_vars": true,
   "assets": {
     "directory": "./dist-admin",
     "binding": "ASSETS",
